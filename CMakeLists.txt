@@ -59,10 +59,10 @@ endif()
 include_directories(${FFMPEG_INCLUDE_DIR})
 add_library(ffenc MODULE ffenc.cpp)
 target_link_libraries(ffenc omega ${FFMPEG_LIBRARIES})
-declare_native_module(ffenc)
+#declare_native_module(ffenc)
 
 
-if(false)
+if(true)
 #if(OMEGA_BUILD_EXAMPLES)
     add_executable(helloEncoderFFENC
         examples/cube.cpp

@@ -78,9 +78,11 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 // Library entry point.
+//WHAT IS THIS FOR?
+/*
 DLL_EXPORT IEncoder* createEncoder() 
 { return new Encoder(); }
-    
+*/    
 ////////////////////////////////////////////////////////////////////////////////
 Encoder::Encoder()
 {
@@ -115,7 +117,6 @@ bool Encoder::configure(int w, int h, int fps, int quality)
 	
 	
     int ret;
-    unsigned int i;
 
     ofmt_ctx = NULL;
     avformat_alloc_output_context2(&ofmt_ctx, NULL, "rtsp", NULL);		//Edit: to plugin to sample code //last entry == filename
@@ -130,7 +131,7 @@ bool Encoder::configure(int w, int h, int fps, int quality)
 	out_stream = avformat_new_stream(ofmt_ctx, NULL);
 	if (!out_stream) {
 		av_log(NULL, AV_LOG_ERROR, "Failed allocating output stream\n");
-		return AVERROR_UNKNOWN;
+		//return AVERROR_UNKNOWN;
 	}
         
 	enc_ctx = out_stream->codec;
@@ -138,7 +139,7 @@ bool Encoder::configure(int w, int h, int fps, int quality)
 	encoder = avcodec_find_encoder(AV_CODEC_ID_H264);
 	if (!encoder) {
 		av_log(NULL, AV_LOG_FATAL, "Necessary encoder not found\n");
-		return AVERROR_INVALIDDATA;
+		//return AVERROR_INVALIDDATA;
 	}
 	
 	
@@ -160,7 +161,7 @@ bool Encoder::configure(int w, int h, int fps, int quality)
 	
 	ret = avcodec_open2(enc_ctx, encoder, NULL);
 	if (ret < 0) {
-		av_log(NULL, AV_LOG_ERROR, "Cannot open video encoder for stream #%u\n", i);
+		av_log(NULL, AV_LOG_ERROR, "Cannot open video encoder\n");
 		return false;
 	}
 
@@ -338,8 +339,8 @@ int Encoder::encodeFrameHelper(AVFrame *frame, unsigned int stream_index, int *g
     }
    
     //COPY SEI NAL INFORMATION TO THE CORRECT LOCATION IN PIPELINE
-    memcpy(c_ctx->priv_data + 1192 , &buf2, sizeof(uint8_t *));
-    memcpy(c_ctx->priv_data + 1200 , &len, sizeof(int));
+	memcpy((AVCodecContext *)c_ctx->priv_data + 1192, &buf2, sizeof(uint8_t *));
+	memcpy((AVCodecContext *)c_ctx->priv_data + 1200, &len, sizeof(int));
 
 
     ret = avcodec_encode_video2(c_ctx, &enc_pkt, frame, got_frame);
