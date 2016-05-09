@@ -2,22 +2,45 @@ ffenc is a framework that uses FFMPEG to encode raw frames into H.264 video stre
 
 ### Global Functions ###
 
+#### initialize ####
+> bool initialize()
+
+initialized the ffmpeg callbacks required for the encoder.
+
 #### configure ####
-> configure(int width, int height, int fps = 30, int quality = 100);
+> bool configure(int width = 352, int height = 288, int fps = 25);
 
-Configures the FFMPEG H.264 Encoder
-- `width` : width of each frame of the stream
-- `height` : height of each frame of the stream
-- `fps` (optional) : frames per second for the created video stream. Default: 30
-- `quality` (optional) : ??? Default: 100
+Locates the H264 encoder, configures the codec & opens it
+- `width` : width of each frame of the stream. Default: 352
+- `height` : height of each frame of the stream. Default: 288
+- `fps` : frames per second for the created video stream. Default: 25
 
-#### shutdown ####
-> shutdown()
-
-Destroys the encoder instance and frees all memory instances.
+This function is also responsible for configuring other variables needed to encode raw frames from PixelData.
 
 #### encodeFrame ####
-> encodeFrame(renderTarget *rt)
+> bool encodeFrame(RenderTarget* source, char* sei_data, size_t lenData);
 
-Encodes a raw video frame into an H.264 video stream
-- `rt` : raw video frame to be encoded
+Encodes the raw data along with user specified SEI NAL unit. Returns `true` on successfully encoding the given frame.
+- `source` : raw pixel data.
+- `sei_data` : user added SEI NAL message to be added for the frame being encoded.
+- `lenData` : size of the SEI NAL message.
+
+#### dataAvailable ####
+> bool dataAvailable()
+
+Returns `true` if there exists an encoded frame to be transferred.
+
+#### lockBitstream ####
+> bool lockBitstream(const void** stptr, uint32_t* bytes)
+
+Coppies the encoded frame data & its size to the pointers passed to it.
+
+#### unlockBitstream ####
+> void unlockBitstream()
+
+Frees the frame data.
+
+#### shutdown ####
+> void shutdown()
+
+Frees all memory instances.
