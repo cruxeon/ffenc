@@ -63,18 +63,11 @@ target_link_libraries(ffenc omegaToolkit ${FFMPEG_LIBRARIES})
 #declare_native_module(ffenc)
 
 
-if(false)
+if(true)
 #if(OMEGA_BUILD_EXAMPLES)
     add_executable(helloEncoderFFENC
         examples/cube.cpp
         examples/helloEncoderFFENC.cpp)
     set_target_properties(helloEncoderFFENC PROPERTIES FOLDER examples)
     target_link_libraries(helloEncoderFFENC omega ffenc)
-endif()
-
-if(true)
-    add_executable(ffencTest
-        examples/ffencTest.cpp)
-    set_target_properties(ffencTest PROPERTIES FOLDER examples)
-    target_link_libraries(ffencTest ffenc)
 endif()

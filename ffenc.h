@@ -1,3 +1,7 @@
+#include <omega.h>
+#include <omegaToolkit.h>
+
+
 extern "C" {
 #include <libavutil/opt.h>
 #include <libavcodec/avcodec.h>
@@ -7,14 +11,25 @@ extern "C" {
 #include <libavutil/pixfmt.h>
 }
 
-class Encoder//: public IEncoder
+#ifdef OMEGA_OS_WIN
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+#define DLL_EXPORT extern "C"
+#endif
+
+using namespace omega;
+using namespace omegaToolkit;
+
+
+class Encoder : public IEncoder
 {
 public:
 	Encoder();
 
 	bool initialize();
-	bool configure(int width = 352, int height = 288, int fps = 25);
-	bool encodeFrame(/*RenderTarget* source, */char* sei_data = NULL, size_t lenData = 0);
+	bool configure(int width = 352, int height = 288, int fps = 25, int quality = 100);
+	//bool encodeFrame(RenderTarget* source, char* sei_data = NULL, size_t lenData = 0);
+	bool encodeFrame(RenderTarget* source);
 	bool dataAvailable();
 	bool lockBitstream(const void** stptr, uint32_t* bytes);
 	void unlockBitstream();
@@ -26,13 +41,13 @@ private:
 
 	char* sei_msg;
 
-	//struct SwsContext* myImgConvertCtx;
-	//PixelData* pixels;
-	//uint8_t* myBuffer;
+	struct SwsContext* myImgConvertCtx;
+	PixelData* pixels;
+	uint8_t* myBuffer;
 
 	AVCodec* codec;
 	AVCodecContext* c;
 	AVFrame *frame;
-	//AVFrame *frameRGB;
+	AVFrame *frameRGB;
 	AVPacket packet;
 };

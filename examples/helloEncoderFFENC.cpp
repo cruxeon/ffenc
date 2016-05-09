@@ -21,7 +21,8 @@ public:
 
         while(!SystemManager::instance()->isExitRequested())
         {
-            IEncoder* e = streamer->lockEncoder();
+			//streamer = new CameraStreamer("ffenc");			// Tried doing this but NOT WORKING!?!? HOW TO DO THIS? should I even be doing this? 
+			IEncoder* e = streamer->lockEncoder();
             if(e != NULL && e->dataAvailable())
             {
                 const void* data;

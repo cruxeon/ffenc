@@ -18,21 +18,11 @@
 //
 
 
-/*	<<<<<<  UNCOMMENT WHEN MERGING CODE  >>>>>>>
-#include <omega.h>
-#include <omegaToolkit.h>
-
-#ifdef OMEGA_OS_WIN
-#define DLL_EXPORT extern "C" __declspec(dllexport)
-#else
-#define DLL_EXPORT extern "C"
-#endif
-
 // Library entry point.
 DLL_EXPORT IEncoder* createEncoder()
 {
 	return new Encoder();
-}*/
+}
 
 
 Encoder::Encoder()
@@ -50,7 +40,7 @@ bool Encoder::initialize()
 }
 
 
-bool Encoder::configure(int width, int height, int fps)
+bool Encoder::configure(int width, int height, int fps, int quality)
 {
 	codec = avcodec_find_encoder(AV_CODEC_ID_H264);
 	if (!codec) {
@@ -79,7 +69,7 @@ bool Encoder::configure(int width, int height, int fps)
 		return false;
 	}
 	
-	/*
+	
 	int numBytes = avpicture_get_size(AV_PIX_FMT_RGBA, c->width, c->height);
 	myBuffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
 
@@ -87,17 +77,17 @@ bool Encoder::configure(int width, int height, int fps)
 		c->width, c->height, AV_PIX_FMT_RGBA,
 		c->width, c->height,
 		c->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-	*/
+	
 
 	return true;
 }
 
 
-bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenData)
+bool Encoder::encodeFrame(RenderTarget* source)
 {	
-	//oassert(source != NULL);
+	oassert(source != NULL);
 
-	/*
+	
 	frameRGB = av_frame_alloc();
 	if (!frameRGB) {
 		fprintf(stderr, "Could not allocate video frameRGB\n");
@@ -105,7 +95,7 @@ bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenDa
 	}
 
 	avpicture_fill((AVPicture *)frameRGB, myBuffer, AV_PIX_FMT_RGBA, c->width, c->height);
-	*/
+	
 
 	frame = av_frame_alloc();
 	if (!frame) {
@@ -126,7 +116,7 @@ bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenDa
 	/* TODO: Populate FRAME DATA from RenderTarget* source */
 	//	pixels(input) -> RGBframe(TODO) -> YUVframe(done)
 
-	/*
+	
 	source->readback();
 	pixels = source->getOffscreenColorTarget();
 
@@ -138,33 +128,35 @@ bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenDa
 		memcpy(myBuffer + y * p, out + (h - 1 - y) * p, p);
 	}
 
-	myPixels->unmap();
-	myPixels->setDirty();
+	pixels->unmap();
+	pixels->setDirty();
 
 	// scale from frameRGB (RGB data taken from pixels) into frame (YUV data) for h264 encoding
-	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, myCodecCtx->height, frame->data, frame->linesize);
-	*/
+	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, c->height, frame->data, frame->linesize);
+	
 	
 	/* Temp Dummy Data */
+	/*
 	int i = frameCount + 1;
 	for (int y = 0; y < c->height; y++) {
 		for (int x = 0; x < c->width; x++) {
 			frame->data[0][y * frame->linesize[0] + x] = x + y + i * 3;
 		}
 	}
-	/* Cb and Cr */
+	// Cb and Cr
 	for (int y = 0; y < c->height / 2; y++) {
 		for (int x = 0; x < c->width / 2; x++) {
 			frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
 			frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
 		}
-	}
+	}*/
 	
 	frameCount++;
 	frame->pts = frameCount;
 
 
 	/*Write SEI NAL unit*/
+	/*
 	char sei_prefix_string_[] = "\x00\x00\x01\x06\x05\x05";
 	char sei_suffix_string_[] = "\x80";
 
@@ -176,22 +168,12 @@ bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenDa
 	memcpy(sei_msg, sei_prefix_string_, lenPrefix);
 	memcpy(sei_msg + lenPrefix, sei_data, lenData);
 	memcpy(sei_msg + lenPrefix + lenData, sei_suffix_string_, lenSuffix);
-
+	*/
 	
 	//COPY SEI NAL INFORMATION TO THE CORRECT LOCATION IN PIPELINE
 	//memcpy((char *)c->priv_data + 1192, sei_msg, sizeof(sei_msg));
 	//memcpy((char *)c->priv_data + 1192 + sizeof(uint8_t *), &len, sizeof(int));
 	
-	/*
-	void* obj;
-	const AVOption *o = av_opt_find2(c, "sei", NULL, 0, 0, &obj);
-	if (!o || !obj)
-	{
-		fprintf(stderr, "FFFUUUUUCCCCKKKKKK\n");
-		system("pause");
-		return AVERROR_OPTION_NOT_FOUND;
-	}*/
-	//av_opt_set(c, "sei", sei_msg, AV_OPT_SEARCH_CHILDREN);
 
 	av_init_packet(&packet);
 	packet.data = NULL;
@@ -204,8 +186,8 @@ bool Encoder::encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenDa
 	}
 
 	free(sei_msg);
-	//av_freep(&frameRGB->data[0]);
-	//av_frame_free(&frameRGB);
+	av_freep(&frameRGB->data[0]);
+	av_frame_free(&frameRGB);
 	av_freep(&frame->data[0]);
 	av_frame_free(&frame);
 
