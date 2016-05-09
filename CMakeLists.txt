@@ -57,12 +57,13 @@ if(NOT FFMPEG_FOUND)
 endif()
 
 include_directories(${FFMPEG_INCLUDE_DIR})
-add_library(ffenc MODULE ffenc.cpp)
-target_link_libraries(ffenc omega ${FFMPEG_LIBRARIES})
+add_library(ffenc SHARED ffenc.cpp)
+set_target_properties(ffenc PROPERTIES FOLDER modules)
+target_link_libraries(ffenc omegaToolkit ${FFMPEG_LIBRARIES})
 #declare_native_module(ffenc)
 
 
-if(true)
+if(false)
 #if(OMEGA_BUILD_EXAMPLES)
     add_executable(helloEncoderFFENC
         examples/cube.cpp
