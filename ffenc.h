@@ -1,5 +1,3 @@
-#include <cstring>
-
 extern "C" {
 #include <libavutil/opt.h>
 #include <libavcodec/avcodec.h>
@@ -16,7 +14,7 @@ public:
 
 	bool initialize();
 	bool configure(int width = 352, int height = 288, int fps = 25);
-	bool encodeFrame(/*RenderTarget* source, */char* sei_data, size_t lenData);
+	bool encodeFrame(/*RenderTarget* source, */char* sei_data = NULL, size_t lenData = 0);
 	bool dataAvailable();
 	bool lockBitstream(const void** stptr, uint32_t* bytes);
 	void unlockBitstream();

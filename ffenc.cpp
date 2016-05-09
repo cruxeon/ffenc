@@ -13,9 +13,15 @@
 //	3> uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 //	3> fwrite(endcode, 1, sizeof(endcode), f);
 //
+//	4> dataAvailable() called only after encodeFrame()
+//	4> So should got_output be set to 0 during unlockBitstream() ??
+//
 
 
 /*	<<<<<<  UNCOMMENT WHEN MERGING CODE  >>>>>>>
+#include <omega.h>
+#include <omegaToolkit.h>
+
 #ifdef OMEGA_OS_WIN
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #else
