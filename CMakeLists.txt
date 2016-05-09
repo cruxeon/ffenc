@@ -72,7 +72,7 @@ if(false)
     target_link_libraries(helloEncoderFFENC omega ffenc)
 endif()
 
-if(false)
+if(true)
     add_executable(ffencTest
         examples/ffencTest.cpp)
     set_target_properties(ffencTest PROPERTIES FOLDER examples)
