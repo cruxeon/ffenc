@@ -70,3 +70,10 @@ if(true)
     set_target_properties(helloEncoderFFENC PROPERTIES FOLDER examples)
     target_link_libraries(helloEncoderFFENC omega ffenc)
 endif()
+
+if(false)
+    add_executable(ffencTest
+        examples/ffencTest.cpp)
+    set_target_properties(ffencTest PROPERTIES FOLDER examples)
+    target_link_libraries(ffencTest ffenc)
+endif()
