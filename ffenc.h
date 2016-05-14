@@ -28,7 +28,7 @@ public:
 
 	bool initialize();
 	bool configure(int width = 352, int height = 288, int fps = 25, int quality = 100);
-	//bool encodeFrame(RenderTarget* source, char* sei_data = NULL, size_t lenData = 0);
+	void addSei(char* sei_data, size_t lenData);
 	bool encodeFrame(RenderTarget* source);
 	bool dataAvailable();
 	bool lockBitstream(const void** stptr, uint32_t* bytes);
@@ -39,7 +39,9 @@ private:
 	int frameCount;
 	int got_output;
 
+	bool addSeiData;
 	char* sei_msg;
+	int sei_pkt_size;
 
 	struct SwsContext* myImgConvertCtx;
 	PixelData* pixels;

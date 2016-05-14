@@ -9,13 +9,7 @@
 //	2> Need to flush stdout and get delayed frames ??
 //	2> If yes when? Perhaps shutdown(); ??
 //
-//	3> Add sequence end code to have a real mpeg file ??
-//	3> uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-//	3> fwrite(endcode, 1, sizeof(endcode), f);
-//
-//	4> dataAvailable() called only after encodeFrame()
-//	4> So should got_output be set to 0 during unlockBitstream() ??
-//
+
 
 
 // Library entry point.
@@ -30,6 +24,7 @@ Encoder::Encoder()
 	frameCount = 0;
 	got_output = 0;
 	c = NULL;
+	addSeiData = false;
 }
 
 
@@ -69,7 +64,7 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 		return false;
 	}
 	
-	
+	pixels = new PixelData(PixelData::FormatRgba, c->width, c->height);
 	int numBytes = avpicture_get_size(AV_PIX_FMT_RGBA, c->width, c->height);
 	myBuffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
 
@@ -80,6 +75,28 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 	
 
 	return true;
+}
+
+
+void Encoder::addSei(char* sei_data, size_t lenData)
+{
+	/*Write SEI NAL unit*/
+	
+	char sei_prefix_string_[] = "\x00\x00\x01\x06\x05\x00";		//last value is size -- setting it to zero default (reset in next line)
+	sei_prefix_string_[5] = lenData;
+	char sei_suffix_string_[] = "\x80";
+
+	int lenPrefix = sizeof(sei_prefix_string_) - 1;
+	int lenSuffix = sizeof(sei_suffix_string_) - 1;
+	int sei_pkt_size = lenPrefix + lenData + lenSuffix;
+
+	
+	sei_msg = (char *)malloc(sei_pkt_size);
+	memcpy(sei_msg, sei_prefix_string_, lenPrefix);
+	memcpy(sei_msg + lenPrefix, sei_data, lenData);
+	memcpy(sei_msg + lenPrefix + lenData, sei_suffix_string_, lenSuffix);
+
+	addSeiData = true;
 }
 
 
@@ -116,7 +133,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	/* TODO: Populate FRAME DATA from RenderTarget* source */
 	//	pixels(input) -> RGBframe(TODO) -> YUVframe(done)
 
-	
+	/*
 	source->readback();
 	pixels = source->getOffscreenColorTarget();
 
@@ -130,13 +147,13 @@ bool Encoder::encodeFrame(RenderTarget* source)
 
 	pixels->unmap();
 	pixels->setDirty();
-
+	
 	// scale from frameRGB (RGB data taken from pixels) into frame (YUV data) for h264 encoding
 	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, c->height, frame->data, frame->linesize);
-	
+	*/
 	
 	/* Temp Dummy Data */
-	/*
+	
 	int i = frameCount + 1;
 	for (int y = 0; y < c->height; y++) {
 		for (int x = 0; x < c->width; x++) {
@@ -149,30 +166,19 @@ bool Encoder::encodeFrame(RenderTarget* source)
 			frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
 			frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
 		}
-	}*/
+	}
 	
 	frameCount++;
 	frame->pts = frameCount;
 
 
-	/*Write SEI NAL unit*/
-	/*
-	char sei_prefix_string_[] = "\x00\x00\x01\x06\x05\x05";
-	char sei_suffix_string_[] = "\x80";
-
-	int lenPrefix = sizeof(sei_prefix_string_) - 1;
-	int lenSuffix = sizeof(sei_suffix_string_) - 1;
-	int len = lenPrefix + lenData + lenSuffix;
-
-	sei_msg = (char *)malloc(len);
-	memcpy(sei_msg, sei_prefix_string_, lenPrefix);
-	memcpy(sei_msg + lenPrefix, sei_data, lenData);
-	memcpy(sei_msg + lenPrefix + lenData, sei_suffix_string_, lenSuffix);
-	*/
-	
 	//COPY SEI NAL INFORMATION TO THE CORRECT LOCATION IN PIPELINE
-	//memcpy((char *)c->priv_data + 1192, sei_msg, sizeof(sei_msg));
-	//memcpy((char *)c->priv_data + 1192 + sizeof(uint8_t *), &len, sizeof(int));
+	if (addSeiData)
+	{
+		memcpy((char *)c->priv_data + 1192, sei_msg, sizeof(uint8_t *));
+		memcpy((char *)c->priv_data + 1192 + sizeof(uint8_t *), &sei_pkt_size, sizeof(int));
+		addSeiData = false;
+	}
 	
 
 	av_init_packet(&packet);
@@ -185,9 +191,8 @@ bool Encoder::encodeFrame(RenderTarget* source)
 		return false;
 	}
 
-	free(sei_msg);
-	av_freep(&frameRGB->data[0]);
-	av_frame_free(&frameRGB);
+	//av_freep(&frameRGB->data[0]);
+	//av_frame_free(&frameRGB);
 	av_freep(&frame->data[0]);
 	av_frame_free(&frame);
 
@@ -216,6 +221,7 @@ bool Encoder::lockBitstream(const void** stptr, uint32_t* bytes)
 
 void Encoder::unlockBitstream()
 {
+	got_output = 0;
 	av_packet_unref(&packet);
 }
 
