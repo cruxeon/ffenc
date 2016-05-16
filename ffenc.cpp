@@ -12,7 +12,7 @@
 
 
 
-// Library entry point.
+/* Library entry point */
 DLL_EXPORT IEncoder* createEncoder()
 {
 	return new Encoder();
@@ -63,10 +63,12 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 		fprintf(stderr, "Could not open codec\n");
 		return false;
 	}
+
 	
 	pixels = new PixelData(PixelData::FormatRgba, c->width, c->height);
 	int numBytes = avpicture_get_size(AV_PIX_FMT_RGBA, c->width, c->height);
 	myBuffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+
 
 	myImgConvertCtx = sws_getContext(
 		c->width, c->height, AV_PIX_FMT_RGBA,
@@ -80,10 +82,24 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 
 void Encoder::addSei(char* sei_data, size_t lenData)
 {
-	/*Write SEI NAL unit*/
-	
+	/***************************** SEI NAL unit *****************************/
+	/* \x00\x00\x01	- NAL unit identifier									*/
+	/* \x06			- Indicating NAL unit of type 6 ie. SEI					*/
+	/* \x05			- Indicating SEI of type 5 ie. User Data Unregistered	*/
+	/* \x00			- Indicating size of SEI payload (1 byte)				*/
+	/* <sei data>															*/
+	/* \x80			- Indicates end of SEI NAL unit							*/
+	/************************************************************************/
+
+	if (lenData < 0 || lenData >= 255)
+	{
+		fprintf(stderr, "Invalid SEI size (Must be between 0 and 254)\n");
+		addSeiData = false;
+		return;
+	}
+
 	char sei_prefix_string_[] = "\x00\x00\x01\x06\x05\x00";		//last value is size -- setting it to zero default (reset in next line)
-	sei_prefix_string_[5] = lenData;
+	sei_prefix_string_[5] = lenData;							// 0 < lenData < 255
 	char sei_suffix_string_[] = "\x80";
 
 	int lenPrefix = sizeof(sei_prefix_string_) - 1;
@@ -131,7 +147,10 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	}
 
 	/* TODO: Populate FRAME DATA from RenderTarget* source */
-	//	pixels(input) -> RGBframe(TODO) -> YUVframe(done)
+	//	1> Get (RGB?) pixel data from omegalib.. (what format is source data in?? -- can't seem to figure out)
+	//	2> Put raw pixel values in a AVFrame....
+	//	3> Convert RGB frame to YUV frame....... (done)
+	//
 
 	/*
 	source->readback();
@@ -152,8 +171,8 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, c->height, frame->data, frame->linesize);
 	*/
 	
+
 	/* Temp Dummy Data */
-	
 	int i = frameCount + 1;
 	for (int y = 0; y < c->height; y++) {
 		for (int x = 0; x < c->width; x++) {
