@@ -148,10 +148,10 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	}
 
 	/* TODO: Populate FRAME DATA from RenderTarget* source */
-	//	1> Get (RGB?) pixel data from omegalib.. (what format is source data in?? -- can't seem to figure out)
-	//	2> Put raw pixel values in a AVFrame....
+	//	1> Get pixel data from omegalib......... (done)
+	//	2> Put raw pixel values in a AVFrame.... (can't seem to figure out)
 	//	3> Convert RGB frame to YUV frame....... (done)
-	//
+	
 	PixelData* pixBuf = new PixelData(PixelData::FormatRgb, c->width, c->height);
 	source->setReadbackTarget(pixBuf);
 	
