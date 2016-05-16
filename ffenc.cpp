@@ -58,6 +58,7 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 	c->max_b_frames = 1;
 	c->pix_fmt = AV_PIX_FMT_YUV420P;
 	av_opt_set(c, "preset", "slow", 0);
+	av_opt_set(c, "profile", "baseline", AV_OPT_SEARCH_CHILDREN);
 
 	if (avcodec_open2(c, codec, NULL) < 0) {
 		fprintf(stderr, "Could not open codec\n");
@@ -151,28 +152,34 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	//	2> Put raw pixel values in a AVFrame....
 	//	3> Convert RGB frame to YUV frame....... (done)
 	//
-
-	/*
+	PixelData* pixBuf = new PixelData(PixelData::FormatRgb, c->width, c->height);
+	source->setReadbackTarget(pixBuf);
+	
 	source->readback();
 	pixels = source->getOffscreenColorTarget();
 
-	byte* out = pixels->map();
-	int p = pixels->getPitch();
-	int h = c->height;
-	for(int y = 0; y < h; y++)
+	if (pixels != NULL)
 	{
-		memcpy(myBuffer + y * p, out + (h - 1 - y) * p, p);
+		byte* out = pixels->map();
+
+		int p = pixels->getPitch();
+		int h = c->height;
+		for (int y = 0; y < h; y++)
+		{
+			memcpy(myBuffer + y * p, out + (h - 1 - y) * p, p);
+		}
+
+		pixels->unmap();
+		pixels->setDirty();
 	}
 
-	pixels->unmap();
-	pixels->setDirty();
-	
 	// scale from frameRGB (RGB data taken from pixels) into frame (YUV data) for h264 encoding
 	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, c->height, frame->data, frame->linesize);
-	*/
+	
 	
 
 	/* Temp Dummy Data */
+	/*
 	int i = frameCount + 1;
 	for (int y = 0; y < c->height; y++) {
 		for (int x = 0; x < c->width; x++) {
@@ -186,6 +193,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 			frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
 		}
 	}
+	*/
 	
 	frameCount++;
 	frame->pts = frameCount;
@@ -221,7 +229,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 
 bool Encoder::dataAvailable()
 {
-	if (got_output) return true;
+	if (got_output && packet.data != NULL) return true;
 	return false;
 }
 
@@ -230,6 +238,11 @@ bool Encoder::lockBitstream(const void** stptr, uint32_t* bytes)
 {
 	if (dataAvailable())
 	{
+		if (got_output == 0 || packet.data == NULL) 
+		{
+			fprintf(stderr, "WTF\n");			// WHY DOES THIS HAPPEN??? 
+			return false;
+		}
 		*bytes = (uint32_t)packet.size;
 		*stptr = packet.data;
 		return true;
@@ -241,12 +254,12 @@ bool Encoder::lockBitstream(const void** stptr, uint32_t* bytes)
 void Encoder::unlockBitstream()
 {
 	got_output = 0;
-	av_packet_unref(&packet);
 }
 
 
 void Encoder::shutdown()
 {
+	av_packet_unref(&packet);	//where to do this?? is it even required?
 	avcodec_close(c);
 	av_free(c);
 }

@@ -18,29 +18,26 @@ public:
     {
         // Open stream
         output = fopen("out.h264", "wb");
-
         while(!SystemManager::instance()->isExitRequested())
-        {
-			//streamer = new CameraStreamer("ffenc");			// Tried doing this but NOT WORKING!?!? HOW TO DO THIS? should I even be doing this? 
+        {	
 			IEncoder* e = streamer->lockEncoder();
             if(e != NULL && e->dataAvailable())
             {
                 const void* data;
                 uint32_t size;
                 if(e->lockBitstream(&data, &size))
-                {
-                    fwrite(data, 1, size, output);
-                    e->unlockBitstream();
+				{ 
+					if (data != NULL) {		// Should never be NULL!! Why does this happen???
+
+						fwrite(data, 1, size, output);
+						e->unlockBitstream();
+					}
                 }
             }
             streamer->unlockEncoder();
         }
 		
-		/* Is this handled elsewhere?? */
-		//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-		/* add sequence end code to have a real mpeg file */
-		//fwrite(endcode, 1, sizeof(endcode), f);
-        fclose(output);
+		fclose(output);
     }
 
     FILE* output;
@@ -112,6 +109,7 @@ public:
     virtual void initialize()
     {
         myStreamer = new CameraStreamer("ffenc");
+		myStreamer->setResolution(Vector2i(800, 600));				//How to get width and height? 
         getEngine()->getDefaultCamera()->addListener(myStreamer);
 
         myFileOutputThread = new FileOutputThread();
