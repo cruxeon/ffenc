@@ -66,13 +66,13 @@ bool Encoder::configure(int width, int height, int fps, int quality)
 	}
 
 	
-	pixels = new PixelData(PixelData::FormatRgba, c->width, c->height);
-	int numBytes = avpicture_get_size(AV_PIX_FMT_RGBA, c->width, c->height);
+	pixels = new PixelData(PixelData::FormatRgb, c->width, c->height);
+	int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, c->width, c->height);
 	myBuffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
 
 
 	myImgConvertCtx = sws_getContext(
-		c->width, c->height, AV_PIX_FMT_RGBA,
+		c->width, c->height, AV_PIX_FMT_RGB24,
 		c->width, c->height,
 		c->pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	
@@ -128,7 +128,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 		return false;
 	}
 
-	avpicture_fill((AVPicture *)frameRGB, myBuffer, AV_PIX_FMT_RGBA, c->width, c->height);
+	avpicture_fill((AVPicture *)frameRGB, myBuffer, AV_PIX_FMT_RGB24, c->width, c->height);
 	
 
 	frame = av_frame_alloc();
@@ -147,17 +147,13 @@ bool Encoder::encodeFrame(RenderTarget* source)
 		return false;
 	}
 
-	/* TODO: Populate FRAME DATA from RenderTarget* source */
-	//	1> Get pixel data from omegalib......... (done)
-	//	2> Put raw pixel values in a AVFrame.... (can't seem to figure out)
-	//	3> Convert RGB frame to YUV frame....... (done)
-	
+
 	PixelData* pixBuf = new PixelData(PixelData::FormatRgb, c->width, c->height);
 	source->setReadbackTarget(pixBuf);
 	
 	source->readback();
 	pixels = source->getOffscreenColorTarget();
-
+	
 	if (pixels != NULL)
 	{
 		byte* out = pixels->map();
@@ -172,7 +168,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 		pixels->unmap();
 		pixels->setDirty();
 	}
-
+	
 	// scale from frameRGB (RGB data taken from pixels) into frame (YUV data) for h264 encoding
 	sws_scale(myImgConvertCtx, frameRGB->data, frameRGB->linesize, 0, c->height, frame->data, frame->linesize);
 	
@@ -199,7 +195,8 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	frame->pts = frameCount;
 
 
-	//COPY SEI NAL INFORMATION TO THE CORRECT LOCATION IN PIPELINE
+	// COPY SEI NAL INFORMATION TO THE CORRECT LOCATION IN PIPELINE
+	// This is a hack for libx264; done due to absense of API to access required structure
 	if (addSeiData)
 	{
 		memcpy((char *)c->priv_data + 1192, sei_msg, sizeof(uint8_t *));
@@ -218,8 +215,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 		return false;
 	}
 
-	//av_freep(&frameRGB->data[0]);
-	//av_frame_free(&frameRGB);
+	av_frame_free(&frameRGB);
 	av_freep(&frame->data[0]);
 	av_frame_free(&frame);
 
