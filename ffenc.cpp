@@ -129,7 +129,7 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	}
 
 	avpicture_fill((AVPicture *)frameRGB, myBuffer, AV_PIX_FMT_RGB24, c->width, c->height);
-	
+	//avpicture_fill((AVPicture *)frameRGB, NULL, AV_PIX_FMT_RGB24, c->width, c->height);
 
 	frame = av_frame_alloc();
 	if (!frame) {
@@ -157,16 +157,17 @@ bool Encoder::encodeFrame(RenderTarget* source)
 	if (pixels != NULL)
 	{
 		byte* out = pixels->map();
-
+		
 		int p = pixels->getPitch();
 		int h = c->height;
 		for (int y = 0; y < h; y++)
 		{
 			memcpy(myBuffer + y * p, out + (h - 1 - y) * p, p);
 		}
-
+		//frameRGB->data[0] = out;
 		pixels->unmap();
 		pixels->setDirty();
+		 
 	}
 	
 	// scale from frameRGB (RGB data taken from pixels) into frame (YUV data) for h264 encoding

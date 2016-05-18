@@ -1,4 +1,4 @@
-ffenc is a framework that uses FFMPEG to encode raw frames into H.264 video streams. It is an addon to the porthole module to facilitate low latency streaming of VR content to client nodes.
+ffenc is a framework that uses FFMPEG to encode raw frames into H.264 video streams. It is an addon to the porthole module to facilitate low latency h.264 streaming of VR content to client nodes.
 
 ### Global Functions ###
 
@@ -18,12 +18,9 @@ Locates the H264 encoder, configures the codec & opens it
 This function is also responsible for configuring other variables needed to encode raw frames from PixelData.
 
 #### encodeFrame ####
-> bool encodeFrame(RenderTarget* source, char* sei_data, size_t lenData);
+> bool encodeFrame(RenderTarget* source);
 
-Encodes the raw data along with user specified SEI NAL unit. Returns `true` on successfully encoding the given frame.
-- `source` : raw pixel data.
-- `sei_data` : user added SEI NAL message to be added for the frame being encoded.
-- `lenData` : size of the SEI NAL message.
+Encodes the raw data provided by Omegalib Returns `true` on successfully encoding the given frame.
 
 #### dataAvailable ####
 > bool dataAvailable()
