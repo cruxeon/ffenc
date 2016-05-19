@@ -60,11 +60,9 @@ include_directories(${FFMPEG_INCLUDE_DIR})
 add_library(ffenc SHARED ffenc.cpp)
 set_target_properties(ffenc PROPERTIES FOLDER modules)
 target_link_libraries(ffenc omegaToolkit ${FFMPEG_LIBRARIES})
-#declare_native_module(ffenc)
 
 
-if(true)
-#if(OMEGA_BUILD_EXAMPLES)
+if(OMEGA_BUILD_EXAMPLES)
     add_executable(helloEncoderFFENC
         examples/cube.cpp
         examples/helloEncoderFFENC.cpp)
